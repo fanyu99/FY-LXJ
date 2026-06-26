@@ -344,7 +344,7 @@ function App() {
 
             <footer className="modal-footer">
               <button onClick={() => setComposerOpen(false)}>取消</button>
-              <button className="primary" onClick={handleCreateTodo} disabled={!formValues.title.trim() || !formValues.location.trim()}>
+              <button className="save-button" onClick={handleCreateTodo} disabled={!formValues.title.trim() || !formValues.location.trim()}>
                 保存
               </button>
             </footer>

@@ -340,9 +340,11 @@ dd {
 }
 
 .todo-modal {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   width: min(720px, calc(100vw - 48px));
   max-height: calc(100vh - 48px);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
@@ -372,6 +374,9 @@ dd {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
+  color: var(--fg);
+  min-width: 58px;
+  min-height: 40px;
   padding: 8px 12px;
 }
 
@@ -379,6 +384,7 @@ dd {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  overflow: auto;
   padding: 20px;
 }
 
@@ -428,9 +434,20 @@ dd {
   justify-content: flex-end;
 }
 
-.modal-footer .primary:disabled {
+.modal-footer .save-button {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+  min-width: 72px;
+}
+
+.modal-footer .save-button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  border-color: var(--border);
+  background: var(--surface-warm);
+  color: var(--muted);
+  opacity: 1;
 }
 
 @media (max-width: 1100px) {
