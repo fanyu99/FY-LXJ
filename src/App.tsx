@@ -2,6 +2,7 @@ import "./App.css";
 import { useEffect, useState } from "react";
 import { sampleSettings, sampleTodos } from "./domain/sampleData";
 import type { RepeatRule, Todo } from "./domain/types";
+import { createTodoFromForm, type TodoFormValues } from "./domain/todoForm";
 import { listTodos, upsertTodo } from "./storage/todoRepository";
 
 const navGroups = [
@@ -67,6 +68,19 @@ function TodoItem({ todo }: { todo: Todo }) {
 function App() {
   const [todos, setTodos] = useState<Todo[]>(sampleTodos);
   const [dataMode, setDataMode] = useState("浏览器预览数据");
+  const [isComposerOpen, setComposerOpen] = useState(false);
+  const [formValues, setFormValues] = useState<TodoFormValues>({
+    title: "",
+    description: "",
+    location: "",
+    date: "2026-06-26",
+    time: "09:00",
+    priority: "medium",
+    category: "个人",
+    reminderEnabled: true,
+    reminderOffsetMinutes: 15,
+    repeatType: "none",
+  });
 
   useEffect(() => {
     async function loadLocalTodos() {
@@ -96,6 +110,42 @@ function App() {
   const futureTodos = todos.filter((todo) => !todo.dueAt.startsWith("2026-06-26"));
   const pendingCount = todos.filter((todo) => todo.status !== "done").length;
   const doneCount = todos.filter((todo) => todo.status === "done").length;
+
+  function updateForm<K extends keyof TodoFormValues>(key: K, value: TodoFormValues[K]) {
+    setFormValues((current) => ({ ...current, [key]: value }));
+  }
+
+  async function handleCreateTodo() {
+    if (!formValues.title.trim() || !formValues.location.trim()) {
+      return;
+    }
+
+    const now = "2026-06-26T20:30:00+08:00";
+    const todo = createTodoFromForm(formValues, {
+      id: crypto.randomUUID(),
+      now,
+      timezoneOffset: "+08:00",
+    });
+
+    if ("__TAURI_INTERNALS__" in window) {
+      await upsertTodo(todo);
+      setTodos(await listTodos());
+      setDataMode("SQLite 本地数据");
+    } else {
+      setTodos((current) => [...current, todo].sort((a, b) => a.dueAt.localeCompare(b.dueAt)));
+      setDataMode("浏览器预览数据");
+    }
+
+    setComposerOpen(false);
+    setFormValues((current) => ({
+      ...current,
+      title: "",
+      description: "",
+      location: "",
+      time: "09:00",
+      repeatType: "none",
+    }));
+  }
 
   return (
     <div className="app-shell" style={{ ["--accent" as string]: sampleSettings.themeColor }}>
@@ -136,7 +186,9 @@ function App() {
           </div>
           <div className="topbar-actions">
             <input placeholder="搜索待办、地点或分类" />
-            <button className="primary">新建待办</button>
+            <button className="primary" onClick={() => setComposerOpen(true)}>
+              新建待办
+            </button>
           </div>
         </header>
 
@@ -204,6 +256,101 @@ function App() {
           </aside>
         </section>
       </main>
+
+      {isComposerOpen ? (
+        <div className="modal-backdrop" onMouseDown={() => setComposerOpen(false)}>
+          <section className="todo-modal" onMouseDown={(event) => event.stopPropagation()}>
+            <header className="modal-header">
+              <h2>新建待办事项</h2>
+              <button onClick={() => setComposerOpen(false)} aria-label="关闭新建待办弹窗">
+                ×
+              </button>
+            </header>
+
+            <div className="form-grid">
+              <label className="field span-2">
+                <span>任务标题</span>
+                <input value={formValues.title} onChange={(event) => updateForm("title", event.currentTarget.value)} placeholder="输入任务标题" />
+              </label>
+
+              <label className="field span-2">
+                <span>任务描述</span>
+                <textarea value={formValues.description} onChange={(event) => updateForm("description", event.currentTarget.value)} placeholder="添加详细描述" />
+              </label>
+
+              <label className="field">
+                <span>地点</span>
+                <input value={formValues.location} onChange={(event) => updateForm("location", event.currentTarget.value)} placeholder="例如：会议室 A" />
+              </label>
+
+              <label className="field">
+                <span>分类</span>
+                <select value={formValues.category} onChange={(event) => updateForm("category", event.currentTarget.value)}>
+                  <option>个人</option>
+                  <option>工作</option>
+                  <option>学习</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>日期</span>
+                <input type="date" value={formValues.date} onChange={(event) => updateForm("date", event.currentTarget.value)} />
+              </label>
+
+              <label className="field">
+                <span>时间</span>
+                <input type="time" value={formValues.time} onChange={(event) => updateForm("time", event.currentTarget.value)} />
+              </label>
+
+              <label className="field">
+                <span>优先级</span>
+                <select value={formValues.priority} onChange={(event) => updateForm("priority", event.currentTarget.value as TodoFormValues["priority"])}>
+                  <option value="high">高</option>
+                  <option value="medium">中</option>
+                  <option value="low">低</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>重复</span>
+                <select value={formValues.repeatType} onChange={(event) => updateForm("repeatType", event.currentTarget.value as TodoFormValues["repeatType"])}>
+                  <option value="none">不重复</option>
+                  <option value="daily">每天</option>
+                  <option value="weekly">每周</option>
+                  <option value="monthly">每月</option>
+                </select>
+              </label>
+
+              <label className="field checkbox-field">
+                <input type="checkbox" checked={formValues.reminderEnabled} onChange={(event) => updateForm("reminderEnabled", event.currentTarget.checked)} />
+                <span>启用提醒</span>
+              </label>
+
+              <label className="field">
+                <span>提前提醒</span>
+                <select
+                  value={formValues.reminderOffsetMinutes}
+                  onChange={(event) => updateForm("reminderOffsetMinutes", Number(event.currentTarget.value))}
+                  disabled={!formValues.reminderEnabled}
+                >
+                  <option value={0}>准时</option>
+                  <option value={5}>提前 5 分钟</option>
+                  <option value={15}>提前 15 分钟</option>
+                  <option value={30}>提前 30 分钟</option>
+                  <option value={60}>提前 1 小时</option>
+                </select>
+              </label>
+            </div>
+
+            <footer className="modal-footer">
+              <button onClick={() => setComposerOpen(false)}>取消</button>
+              <button className="primary" onClick={handleCreateTodo} disabled={!formValues.title.trim() || !formValues.location.trim()}>
+                保存
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
