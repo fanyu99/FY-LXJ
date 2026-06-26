@@ -1,6 +1,8 @@
 import "./App.css";
+import { useEffect, useState } from "react";
 import { sampleSettings, sampleTodos } from "./domain/sampleData";
 import type { RepeatRule, Todo } from "./domain/types";
+import { listTodos, upsertTodo } from "./storage/todoRepository";
 
 const navGroups = [
   {
@@ -63,8 +65,37 @@ function TodoItem({ todo }: { todo: Todo }) {
 }
 
 function App() {
-  const pendingCount = sampleTodos.filter((todo) => todo.status !== "done").length;
-  const doneCount = sampleTodos.filter((todo) => todo.status === "done").length;
+  const [todos, setTodos] = useState<Todo[]>(sampleTodos);
+  const [dataMode, setDataMode] = useState("浏览器预览数据");
+
+  useEffect(() => {
+    async function loadLocalTodos() {
+      if (!("__TAURI_INTERNALS__" in window)) {
+        setDataMode("浏览器预览数据");
+        return;
+      }
+
+      try {
+        let localTodos = await listTodos();
+        if (localTodos.length === 0) {
+          await Promise.all(sampleTodos.map((todo) => upsertTodo(todo)));
+          localTodos = await listTodos();
+        }
+        setTodos(localTodos);
+        setDataMode("SQLite 本地数据");
+      } catch (error) {
+        console.error(error);
+        setDataMode("SQLite 读取失败，显示预览数据");
+      }
+    }
+
+    void loadLocalTodos();
+  }, []);
+
+  const todayTodos = todos.filter((todo) => todo.dueAt.startsWith("2026-06-26"));
+  const futureTodos = todos.filter((todo) => !todo.dueAt.startsWith("2026-06-26"));
+  const pendingCount = todos.filter((todo) => todo.status !== "done").length;
+  const doneCount = todos.filter((todo) => todo.status === "done").length;
 
   return (
     <div className="app-shell" style={{ ["--accent" as string]: sampleSettings.themeColor }}>
@@ -101,7 +132,7 @@ function App() {
         <header className="topbar">
           <div>
             <h1>全部待办</h1>
-            <p>2026年6月26日 · 周五</p>
+            <p>2026年6月26日 · 周五 · {dataMode}</p>
           </div>
           <div className="topbar-actions">
             <input placeholder="搜索待办、地点或分类" />
@@ -118,7 +149,7 @@ function App() {
                 <p>周五 · 6月</p>
               </div>
             </div>
-            {sampleTodos.slice(0, 2).map((todo) => (
+            {todayTodos.map((todo) => (
               <TodoItem key={todo.id} todo={todo} />
             ))}
 
@@ -129,7 +160,9 @@ function App() {
                 <p>周六 · 6月</p>
               </div>
             </div>
-            <TodoItem todo={sampleTodos[2]} />
+            {futureTodos.map((todo) => (
+              <TodoItem key={todo.id} todo={todo} />
+            ))}
           </div>
 
           <aside className="inspector">
