@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapTodoRow, TODO_TABLE_MIGRATION } from "./todoRepository";
+import { mapTodoRow, TODO_UPSERT_SQL, TODO_TABLE_MIGRATION } from "./todoRepository";
 
 describe("TODO_TABLE_MIGRATION", () => {
   it("creates a local-only todos table with reminder and repeat fields", () => {
@@ -49,5 +49,12 @@ describe("mapTodoRow", () => {
       updatedAt: "2026-06-25T18:00:00+08:00",
       completedAt: null,
     });
+  });
+});
+
+describe("TODO_UPSERT_SQL", () => {
+  it("uses sqlite-compatible numbered placeholders", () => {
+    expect(TODO_UPSERT_SQL).toContain("VALUES ($1, $2, $3");
+    expect(TODO_UPSERT_SQL).not.toContain("VALUES (?,");
   });
 });

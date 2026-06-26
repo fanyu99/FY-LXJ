@@ -434,6 +434,12 @@ dd {
   justify-content: flex-end;
 }
 
+.form-error {
+  margin: 0 auto 0 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
 .modal-footer .save-button {
   border-color: var(--accent);
   background: var(--accent);

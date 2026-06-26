@@ -69,6 +69,8 @@ function App() {
   const [todos, setTodos] = useState<Todo[]>(sampleTodos);
   const [dataMode, setDataMode] = useState("浏览器预览数据");
   const [isComposerOpen, setComposerOpen] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [isSaving, setSaving] = useState(false);
   const [formValues, setFormValues] = useState<TodoFormValues>({
     title: "",
     description: "",
@@ -117,34 +119,45 @@ function App() {
 
   async function handleCreateTodo() {
     if (!formValues.title.trim() || !formValues.location.trim()) {
+      setFormError("请填写任务标题和地点。");
       return;
     }
 
-    const now = "2026-06-26T20:30:00+08:00";
-    const todo = createTodoFromForm(formValues, {
-      id: crypto.randomUUID(),
-      now,
-      timezoneOffset: "+08:00",
-    });
+    setSaving(true);
+    setFormError("");
 
-    if ("__TAURI_INTERNALS__" in window) {
-      await upsertTodo(todo);
-      setTodos(await listTodos());
-      setDataMode("SQLite 本地数据");
-    } else {
-      setTodos((current) => [...current, todo].sort((a, b) => a.dueAt.localeCompare(b.dueAt)));
-      setDataMode("浏览器预览数据");
+    try {
+      const now = "2026-06-26T20:30:00+08:00";
+      const todo = createTodoFromForm(formValues, {
+        id: crypto.randomUUID(),
+        now,
+        timezoneOffset: "+08:00",
+      });
+
+      if ("__TAURI_INTERNALS__" in window) {
+        await upsertTodo(todo);
+        setTodos(await listTodos());
+        setDataMode("SQLite 本地数据");
+      } else {
+        setTodos((current) => [...current, todo].sort((a, b) => a.dueAt.localeCompare(b.dueAt)));
+        setDataMode("浏览器预览数据");
+      }
+
+      setComposerOpen(false);
+      setFormValues((current) => ({
+        ...current,
+        title: "",
+        description: "",
+        location: "",
+        time: "09:00",
+        repeatType: "none",
+      }));
+    } catch (error) {
+      console.error(error);
+      setFormError(error instanceof Error ? error.message : "保存失败，请检查本地 SQLite 连接。");
+    } finally {
+      setSaving(false);
     }
-
-    setComposerOpen(false);
-    setFormValues((current) => ({
-      ...current,
-      title: "",
-      description: "",
-      location: "",
-      time: "09:00",
-      repeatType: "none",
-    }));
   }
 
   return (
@@ -343,9 +356,10 @@ function App() {
             </div>
 
             <footer className="modal-footer">
+              {formError ? <p className="form-error">{formError}</p> : null}
               <button onClick={() => setComposerOpen(false)}>取消</button>
-              <button className="save-button" onClick={handleCreateTodo} disabled={!formValues.title.trim() || !formValues.location.trim()}>
-                保存
+              <button className="save-button" onClick={handleCreateTodo} disabled={isSaving || !formValues.title.trim() || !formValues.location.trim()}>
+                {isSaving ? "保存中" : "保存"}
               </button>
             </footer>
           </section>

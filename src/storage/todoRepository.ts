@@ -43,6 +43,27 @@ export interface TodoRow {
 
 let databasePromise: Promise<Database> | null = null;
 
+export const TODO_UPSERT_SQL = `INSERT INTO todos (
+  id, title, description, location, due_at, priority, category, status,
+  reminder_enabled, reminder_offset_minutes, repeat_rule, next_reminder_at,
+  last_reminded_at, created_at, updated_at, completed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+ON CONFLICT(id) DO UPDATE SET
+  title = excluded.title,
+  description = excluded.description,
+  location = excluded.location,
+  due_at = excluded.due_at,
+  priority = excluded.priority,
+  category = excluded.category,
+  status = excluded.status,
+  reminder_enabled = excluded.reminder_enabled,
+  reminder_offset_minutes = excluded.reminder_offset_minutes,
+  repeat_rule = excluded.repeat_rule,
+  next_reminder_at = excluded.next_reminder_at,
+  last_reminded_at = excluded.last_reminded_at,
+  updated_at = excluded.updated_at,
+  completed_at = excluded.completed_at`;
+
 export function mapTodoRow(row: TodoRow): Todo {
   return {
     id: row.id,
@@ -83,26 +104,7 @@ export async function listTodos(): Promise<Todo[]> {
 export async function upsertTodo(todo: Todo): Promise<void> {
   const db = await getDatabase();
   await db.execute(
-    `INSERT INTO todos (
-      id, title, description, location, due_at, priority, category, status,
-      reminder_enabled, reminder_offset_minutes, repeat_rule, next_reminder_at,
-      last_reminded_at, created_at, updated_at, completed_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      title = excluded.title,
-      description = excluded.description,
-      location = excluded.location,
-      due_at = excluded.due_at,
-      priority = excluded.priority,
-      category = excluded.category,
-      status = excluded.status,
-      reminder_enabled = excluded.reminder_enabled,
-      reminder_offset_minutes = excluded.reminder_offset_minutes,
-      repeat_rule = excluded.repeat_rule,
-      next_reminder_at = excluded.next_reminder_at,
-      last_reminded_at = excluded.last_reminded_at,
-      updated_at = excluded.updated_at,
-      completed_at = excluded.completed_at`,
+    TODO_UPSERT_SQL,
     [
       todo.id,
       todo.title,
