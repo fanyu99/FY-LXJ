@@ -5,3 +5,5 @@ target/
 src-tauri/target/
 .env
 .env.local
+.env.*
+!.env.example
