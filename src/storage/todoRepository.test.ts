@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapTodoRow, TODO_UPSERT_SQL, TODO_TABLE_MIGRATION } from "./todoRepository";
+import { mapTodoRow, TODO_DELETE_SQL, TODO_MARK_DONE_SQL, TODO_MARK_REMINDER_SEEN_SQL, TODO_REOPEN_SQL, TODO_UPSERT_SQL, TODO_TABLE_MIGRATION } from "./todoRepository";
 
 describe("TODO_TABLE_MIGRATION", () => {
   it("creates a local-only todos table with reminder and repeat fields", () => {
@@ -56,5 +56,14 @@ describe("TODO_UPSERT_SQL", () => {
   it("uses sqlite-compatible numbered placeholders", () => {
     expect(TODO_UPSERT_SQL).toContain("VALUES ($1, $2, $3");
     expect(TODO_UPSERT_SQL).not.toContain("VALUES (?,");
+  });
+});
+
+describe("todo mutation SQL", () => {
+  it("uses sqlite-compatible placeholders for completion and deletion", () => {
+    expect(TODO_MARK_DONE_SQL).toContain("WHERE id = $3");
+    expect(TODO_REOPEN_SQL).toContain("WHERE id = $2");
+    expect(TODO_DELETE_SQL).toBe("DELETE FROM todos WHERE id = $1");
+    expect(TODO_MARK_REMINDER_SEEN_SQL).toContain("last_reminded_at = $1");
   });
 });

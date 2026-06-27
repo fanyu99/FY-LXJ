@@ -64,6 +64,19 @@ ON CONFLICT(id) DO UPDATE SET
   updated_at = excluded.updated_at,
   completed_at = excluded.completed_at`;
 
+export const TODO_MARK_DONE_SQL = `UPDATE todos
+SET status = 'done', completed_at = $1, updated_at = $2
+WHERE id = $3`;
+
+export const TODO_REOPEN_SQL = `UPDATE todos
+SET status = 'pending', completed_at = NULL, updated_at = $1
+WHERE id = $2`;
+
+export const TODO_DELETE_SQL = "DELETE FROM todos WHERE id = $1";
+export const TODO_MARK_REMINDER_SEEN_SQL = `UPDATE todos
+SET last_reminded_at = $1, updated_at = $2
+WHERE id = $3`;
+
 export function mapTodoRow(row: TodoRow): Todo {
   return {
     id: row.id,
@@ -124,4 +137,24 @@ export async function upsertTodo(todo: Todo): Promise<void> {
       todo.completedAt,
     ],
   );
+}
+
+export async function markTodoDone(id: string, now: string): Promise<void> {
+  const db = await getDatabase();
+  await db.execute(TODO_MARK_DONE_SQL, [now, now, id]);
+}
+
+export async function reopenTodo(id: string, now: string): Promise<void> {
+  const db = await getDatabase();
+  await db.execute(TODO_REOPEN_SQL, [now, id]);
+}
+
+export async function deleteTodo(id: string): Promise<void> {
+  const db = await getDatabase();
+  await db.execute(TODO_DELETE_SQL, [id]);
+}
+
+export async function markTodoReminderSeen(id: string, remindedAt: string, now: string): Promise<void> {
+  const db = await getDatabase();
+  await db.execute(TODO_MARK_REMINDER_SEEN_SQL, [remindedAt, now, id]);
 }

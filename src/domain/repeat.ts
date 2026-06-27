@@ -1,4 +1,5 @@
 import type { RepeatRule } from "./types";
+import { formatLocalWithOffset } from "./reminders";
 
 const ISO_WITH_OFFSET = /^(.+)([+-]\d{2}:\d{2}|Z)$/;
 
@@ -10,29 +11,8 @@ function splitIsoOffset(value: string): { offset: string } {
   return { offset: match[2] };
 }
 
-function pad(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
 function daysInMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
-}
-
-function formatLocalWithOffset(date: Date, offset: string): string {
-  return [
-    date.getFullYear(),
-    "-",
-    pad(date.getMonth() + 1),
-    "-",
-    pad(date.getDate()),
-    "T",
-    pad(date.getHours()),
-    ":",
-    pad(date.getMinutes()),
-    ":",
-    pad(date.getSeconds()),
-    offset,
-  ].join("");
 }
 
 export function computeNextOccurrence(dueAt: string, rule: RepeatRule): string | null {

@@ -1,6 +1,6 @@
 :root {
   --bg: #f5f4ed;
-  --surface: #faf9f5;
+  --surface: rgba(250, 249, 245, 0.96);
   --surface-warm: #e8e6dc;
   --fg: #141413;
   --muted: #6b6a64;
@@ -9,11 +9,22 @@
   --danger: #8a3a30;
   --warn: #8a6b1f;
   --success: #4a6b3a;
+  --font-size: 14px;
+  --bg-opacity: 0.85;
+  --bg-position: 50% 50%;
+  --bg-size: 120% auto;
   font-family: "LXGW WenKai", "Source Han Serif SC", "Noto Serif CJK SC", "Microsoft YaHei", serif;
   color: var(--fg);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
 }
 
 * {
@@ -22,9 +33,8 @@
 
 body {
   margin: 0;
-  min-width: 960px;
   min-height: 100vh;
-  background: var(--bg);
+  background: radial-gradient(circle at top left, rgba(27, 54, 93, 0.08), transparent 28%), var(--bg);
 }
 
 button,
@@ -39,9 +49,64 @@ button {
 }
 
 .app-shell {
+  position: relative;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
+  font-size: var(--font-size);
+  background-position: var(--bg-position);
+  background-size: var(--bg-size);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.app-shell.has-background::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at top left, rgba(27, 54, 93, 0.08), transparent 28%),
+    rgba(245, 244, 237, var(--bg-opacity));
+  content: "";
+  pointer-events: none;
+}
+
+.app-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-error {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.app-error section {
+  width: min(520px, 100%);
+  border: 1px solid rgba(138, 58, 48, 0.28);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 22px;
+}
+
+.app-error h1 {
+  margin: 0 0 10px;
+  color: var(--danger);
+  font-size: 22px;
+}
+
+.app-error p {
+  color: var(--muted);
+}
+
+.app-error button {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--surface);
+  padding: 10px 14px;
 }
 
 .sidebar {
@@ -50,6 +115,7 @@ button {
   border-right: 1px solid var(--border);
   background: var(--surface);
   padding: 24px 12px;
+  backdrop-filter: blur(10px);
 }
 
 .brand {
@@ -67,6 +133,14 @@ button {
   border-radius: 8px;
   color: var(--surface);
   background: var(--accent);
+  font-size: 0;
+  overflow: hidden;
+}
+
+.brand-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .brand-name {
@@ -78,7 +152,9 @@ button {
 .date-header p,
 .todo-body p,
 .sidebar-footer span,
-dt {
+dt,
+.settings-grid span,
+.action-error {
   color: var(--muted);
 }
 
@@ -110,6 +186,10 @@ dt {
   color: var(--accent);
 }
 
+.nav-item {
+  text-align: left;
+}
+
 .nav-badge {
   border-radius: 999px;
   background: var(--accent);
@@ -121,9 +201,28 @@ dt {
 .sidebar-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-top: auto;
   border-top: 1px solid var(--border);
   padding: 16px 12px 0;
+}
+
+.sidebar-signature {
+  color: #f48fb1;
+}
+
+.quit-button {
+  border: 1px solid rgba(138, 58, 48, 0.3);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.quit-button:hover {
+  background: rgba(138, 58, 48, 0.08);
 }
 
 .main {
@@ -154,7 +253,9 @@ dt {
   gap: 12px;
 }
 
-.topbar input {
+.topbar input,
+.settings-grid input,
+.settings-grid select {
   width: 280px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -162,12 +263,24 @@ dt {
   padding: 10px 12px;
 }
 
-.primary {
-  border: 0;
+.ghost,
+.ghost-button,
+.primary,
+.modal-header button,
+.modal-footer button,
+.todo-actions button,
+.settings-actions button {
   border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  padding: 10px 14px;
+}
+
+.primary {
+  border-color: var(--accent);
   background: var(--accent);
   color: var(--surface);
-  padding: 10px 16px;
 }
 
 .content {
@@ -204,10 +317,24 @@ dt {
   border-radius: 8px;
   background: var(--surface);
   padding: 16px;
+  backdrop-filter: blur(10px);
 }
 
 .todo-item.done {
   opacity: 0.58;
+}
+
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 20px;
+}
+
+.empty-state strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--fg);
 }
 
 .todo-check {
@@ -270,11 +397,13 @@ dt {
   gap: 6px;
 }
 
-.todo-actions button {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  padding: 6px 9px;
+.todo-actions .danger-action {
+  border-color: rgba(138, 58, 48, 0.35);
+  color: var(--danger);
+}
+
+.todo-actions .danger-action:hover {
+  background: rgba(138, 58, 48, 0.08);
 }
 
 .inspector {
@@ -330,6 +459,107 @@ dd {
   text-align: right;
 }
 
+.settings-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.settings-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-note {
+  border: 1px solid rgba(27, 54, 93, 0.16);
+  border-radius: 8px;
+  background: rgba(27, 54, 93, 0.06);
+  color: var(--muted);
+  padding: 9px 10px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.settings-inline-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.background-crop {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(250, 249, 245, 0.72);
+  padding: 10px;
+}
+
+.background-crop-preview {
+  position: relative;
+  min-height: 140px;
+  border: 1px solid rgba(27, 54, 93, 0.18);
+  border-radius: 8px;
+  background-color: var(--surface-warm);
+  background-position: var(--bg-position);
+  background-size: var(--bg-size);
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.background-crop-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(27, 54, 93, 0.08), transparent 28%),
+    rgba(245, 244, 237, var(--bg-opacity, 0.85));
+  pointer-events: none;
+}
+
+.background-crop-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--accent);
+  background: rgba(250, 249, 245, 0.85);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.settings-actions button:disabled,
+.settings-inline-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.action-error {
+  margin: 14px 28px 0;
+  border: 1px solid rgba(138, 58, 48, 0.28);
+  border-radius: 8px;
+  background: rgba(138, 58, 48, 0.08);
+  color: var(--danger);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.search-chip {
+  margin: 14px 28px 0;
+  border: 1px solid rgba(27, 54, 93, 0.22);
+  border-radius: 8px;
+  background: rgba(27, 54, 93, 0.08);
+  color: var(--accent);
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -371,13 +601,8 @@ dd {
 
 .modal-header button,
 .modal-footer button {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--fg);
   min-width: 58px;
   min-height: 40px;
-  padding: 8px 12px;
 }
 
 .form-grid {
@@ -456,6 +681,142 @@ dd {
   opacity: 1;
 }
 
+.reminder-shell {
+  position: relative;
+  display: grid;
+  width: 100vw;
+  min-height: 100vh;
+  place-items: start center;
+  padding: 20px;
+  color: var(--fg);
+  background: rgba(245, 244, 237, var(--bg-opacity));
+  background-position: var(--bg-position);
+  background-size: var(--bg-size);
+  background-repeat: no-repeat;
+  overflow: auto;
+}
+
+.reminder-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(27, 54, 93, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(245, 244, 237, 0.7), rgba(232, 230, 220, 0.9));
+  background-size: cover;
+}
+
+.reminder-card {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(250, 249, 245, 0.95);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+.reminder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.reminder-chip {
+  border-radius: 999px;
+  background: rgba(27, 54, 93, 0.08);
+  color: var(--accent);
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.reminder-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.reminder-title h1 {
+  min-width: 0;
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.reminder-description {
+  margin-top: 10px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.reminder-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.reminder-meta span {
+  border-radius: 999px;
+  background: var(--surface-warm);
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.reminder-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.reminder-actions button {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--surface);
+  padding: 12px 16px;
+}
+
+.reminder-actions button:last-child {
+  grid-column: 1 / -1;
+}
+
+.reminder-actions button:disabled,
+.reminder-header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.reminder-error {
+  margin: 14px 0 0;
+  border: 1px solid rgba(138, 58, 48, 0.28);
+  border-radius: 8px;
+  background: rgba(138, 58, 48, 0.08);
+  color: var(--danger);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.font-system {
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+.font-lxgw-wenkai {
+  font-family: "LXGW WenKai", "Source Han Serif SC", "Noto Serif CJK SC", serif;
+}
+
 @media (max-width: 1100px) {
   .content {
     grid-template-columns: 1fr;
@@ -467,11 +828,29 @@ dd {
 }
 
 @media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
 
   .span-2 {
     grid-column: span 1;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
   }
 }

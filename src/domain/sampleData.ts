@@ -2,11 +2,17 @@ import type { AppSettings, Todo } from "./types";
 
 export const sampleSettings: AppSettings = {
   launchOnStartup: true,
+  closeToTray: true,
   fontFamily: "lxgw-wenkai",
   fontSize: 14,
   themeColor: "#1b365d",
   backgroundImagePath: null,
   backgroundOpacity: 0.85,
+  backgroundPositionX: 50,
+  backgroundPositionY: 50,
+  backgroundScale: 120,
+  reminderRecheckSeconds: 30,
+  snoozeMinutes: 10,
 };
 
 export const sampleTodos: Todo[] = [

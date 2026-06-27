@@ -1,4 +1,5 @@
 import type { Todo } from "./types";
+import { computeNextOccurrence } from "./repeat";
 
 const ISO_WITH_OFFSET = /^(.+)([+-]\d{2}:\d{2}|Z)$/;
 
@@ -14,7 +15,7 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
-function formatLocalWithOffset(date: Date, offset: string): string {
+export function formatLocalWithOffset(date: Date, offset: string): string {
   return [
     date.getFullYear(),
     "-",
@@ -29,6 +30,13 @@ function formatLocalWithOffset(date: Date, offset: string): string {
     pad(date.getSeconds()),
     offset,
   ].join("");
+}
+
+function buildReminderAt(dueAt: string, offsetMinutes: number): string {
+  const { offset } = splitIsoOffset(dueAt);
+  const next = new Date(dueAt);
+  next.setMinutes(next.getMinutes() - offsetMinutes);
+  return formatLocalWithOffset(next, offset);
 }
 
 export function findDueReminders(todos: Todo[], now: string): Todo[] {
@@ -49,10 +57,56 @@ export function snoozeTodo(todo: Todo, now: string, minutes: number): Todo {
   const { offset } = splitIsoOffset(now);
   const next = new Date(now);
   next.setMinutes(next.getMinutes() + minutes);
+  const nextAt = formatLocalWithOffset(next, offset);
 
   return {
     ...todo,
-    nextReminderAt: formatLocalWithOffset(next, offset),
+    dueAt: nextAt,
+    nextReminderAt: nextAt,
+    lastRemindedAt: null,
     updatedAt: now,
+  };
+}
+
+export function getReminderSeenKey(todo: Todo, now: string): string {
+  return todo.nextReminderAt ?? now;
+}
+
+export function completeTodoFromReminder(todo: Todo, now: string): Todo {
+  const nextDueAt = computeNextOccurrence(todo.dueAt, todo.repeatRule);
+
+  if (!nextDueAt) {
+    return {
+      ...todo,
+      status: "done",
+      updatedAt: now,
+      completedAt: now,
+    };
+  }
+
+  return {
+    ...todo,
+    dueAt: nextDueAt,
+    status: "pending",
+    nextReminderAt: todo.reminderEnabled ? buildReminderAt(nextDueAt, todo.reminderOffsetMinutes) : null,
+    lastRemindedAt: null,
+    updatedAt: now,
+    completedAt: null,
+  };
+}
+
+export function serializeReminder(todo: Todo): string {
+  return encodeURIComponent(JSON.stringify(todo));
+}
+
+export function deserializeReminder(value: string): Todo {
+  return JSON.parse(decodeURIComponent(value)) as Todo;
+}
+
+export function withReminderSeen(todo: Todo, remindedAt: string): Todo {
+  return {
+    ...todo,
+    lastRemindedAt: remindedAt,
+    updatedAt: remindedAt,
   };
 }

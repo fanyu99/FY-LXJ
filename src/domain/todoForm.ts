@@ -1,4 +1,5 @@
 import type { Priority, RepeatRule, Todo } from "./types";
+import { formatLocalWithOffset } from "./reminders";
 
 export interface TodoFormValues {
   title: string;
@@ -19,25 +20,9 @@ export interface TodoFormContext {
   timezoneOffset: string;
 }
 
-function pad(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
-function formatLocalWithOffset(date: Date, offset: string): string {
-  return [
-    date.getFullYear(),
-    "-",
-    pad(date.getMonth() + 1),
-    "-",
-    pad(date.getDate()),
-    "T",
-    pad(date.getHours()),
-    ":",
-    pad(date.getMinutes()),
-    ":",
-    pad(date.getSeconds()),
-    offset,
-  ].join("");
+export interface TodoEditContext {
+  now: string;
+  timezoneOffset: string;
 }
 
 function buildDueAt(date: string, time: string, timezoneOffset: string): string {
@@ -73,5 +58,46 @@ export function createTodoFromForm(values: TodoFormValues, context: TodoFormCont
     createdAt: context.now,
     updatedAt: context.now,
     completedAt: null,
+  };
+}
+
+export function todoToFormValues(todo: Todo): TodoFormValues {
+  return {
+    title: todo.title,
+    description: todo.description,
+    location: todo.location,
+    date: todo.dueAt.slice(0, 10),
+    time: todo.dueAt.slice(11, 16),
+    priority: todo.priority,
+    category: todo.category,
+    reminderEnabled: todo.reminderEnabled,
+    reminderOffsetMinutes: todo.reminderOffsetMinutes,
+    repeatType: todo.repeatRule.type,
+  };
+}
+
+export function updateTodoFromForm(todo: Todo, values: TodoFormValues, context: TodoEditContext): Todo {
+  const dueAt = buildDueAt(values.date, values.time, context.timezoneOffset);
+  const repeatRule: RepeatRule = { type: values.repeatType } as RepeatRule;
+  const shouldReopen = todo.status === "done" && new Date(dueAt).getTime() > new Date(context.now).getTime();
+
+  return {
+    ...todo,
+    title: values.title.trim(),
+    description: values.description.trim(),
+    location: values.location.trim(),
+    dueAt,
+    priority: values.priority,
+    category: values.category,
+    reminderEnabled: values.reminderEnabled,
+    reminderOffsetMinutes: values.reminderOffsetMinutes,
+    repeatRule,
+    nextReminderAt: values.reminderEnabled
+      ? buildNextReminderAt(dueAt, values.reminderOffsetMinutes, context.timezoneOffset)
+      : null,
+    lastRemindedAt: null,
+    status: shouldReopen ? "pending" : todo.status,
+    completedAt: shouldReopen ? null : todo.completedAt,
+    updatedAt: context.now,
   };
 }
