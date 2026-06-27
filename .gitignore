@@ -37,3 +37,4 @@ src-tauri/target2/
 # Pre-built release artifacts (user downloads via GitHub Releases)
 src-tauri/target/release/liuyun-todo.exe
 src-tauri/target/release/bundle/
+liuyun-todo.exe
